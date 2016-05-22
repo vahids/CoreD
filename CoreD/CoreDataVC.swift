@@ -12,7 +12,7 @@ import CoreData
 
 class CoreDataVC: UITableViewController {
 
-    var dataSource = [NSManagedObject]()
+    var dataSource = [Products]()
     var managedObjectContext: NSManagedObjectContext!
     
     override func viewDidLoad() {
@@ -35,7 +35,7 @@ class CoreDataVC: UITableViewController {
     override func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCellWithIdentifier("cell", forIndexPath: indexPath)
         let product = dataSource[indexPath.row]
-        cell.textLabel?.text = product.valueForKey("name") as? String
+        cell.textLabel?.text = product.name
         print(product.debugDescription)
 
         return cell
@@ -53,7 +53,7 @@ class CoreDataVC: UITableViewController {
         
         do {
             let result = try managedObjectContext.executeFetchRequest(request)
-            dataSource = result as! [NSManagedObject]
+            dataSource = result as! [Products]
             tableView.reloadData()
         } catch {
             fatalError("Error in retreving Products items")
@@ -62,14 +62,19 @@ class CoreDataVC: UITableViewController {
     
     //MARK: Actions
     @IBAction func addAction(sender: UIBarButtonItem) {
-        let alert = UIAlertController(title: "لیست کالا", message: "اصافه کردن کالا", preferredStyle: UIAlertControllerStyle.Alert)
+        let alert = UIAlertController(title: "لیست کالا", message: "اضافه کردن کالا", preferredStyle: UIAlertControllerStyle.Alert)
         
         let addAction = UIAlertAction(title: "اصافه کن", style: UIAlertActionStyle.Default) { (action: UIAlertAction) in
             let textField = alert.textFields?.first
-
+/*
             let entity = NSEntityDescription.entityForName("Products", inManagedObjectContext: self.managedObjectContext)
             let product = NSManagedObject(entity: entity!, insertIntoManagedObjectContext: self.managedObjectContext)
             product.setValue(textField?.text, forKey: "name")
+            */
+            
+            let product = NSEntityDescription.insertNewObjectForEntityForName("Products", inManagedObjectContext: self.managedObjectContext) as! Products
+            product.name = textField?.text
+            
             
             do {
                 try self.managedObjectContext.save()
@@ -88,8 +93,8 @@ class CoreDataVC: UITableViewController {
             
         }
         
-        alert.addAction(addAction)
         alert.addAction(cancelAction)
+        alert.addAction(addAction)
         presentViewController(alert, animated: true) { 
             
         }
