@@ -7,93 +7,58 @@
 //
 
 import UIKit
+import CoreData
+
 
 class CoreDataVC: UITableViewController {
 
-    var dataSource = [String]()
+    var dataSource = [NSManagedObject]()
+    var managedObjectContext: NSManagedObjectContext!
     
     override func viewDidLoad() {
         super.viewDidLoad()
-
-        // Uncomment the following line to preserve selection between presentations
-        // self.clearsSelectionOnViewWillAppear = false
-
-        // Uncomment the following line to display an Edit button in the navigation bar for this view controller.
-        // self.navigationItem.rightBarButtonItem = self.editButtonItem()
+        
+        let appDelegate = UIApplication.sharedApplication().delegate as! AppDelegate
+        managedObjectContext = appDelegate.managedObjectContext
     }
-
-    override func didReceiveMemoryWarning() {
-        super.didReceiveMemoryWarning()
-        // Dispose of any resources that can be recreated.
-    }
-
+    
     // MARK: - Table view data source
-
     override func numberOfSectionsInTableView(tableView: UITableView) -> Int {
-        // #warning Incomplete implementation, return the number of sections
         return 1
     }
 
     override func tableView(tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        // #warning Incomplete implementation, return the number of rows
         return dataSource.count
     }
 
     
     override func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCellWithIdentifier("cell", forIndexPath: indexPath)
-
-        cell.textLabel?.text = dataSource[indexPath.row]
-        
+        let product = dataSource[indexPath.row]
+        cell.textLabel?.text = product.valueForKey("name") as? String
+        print(product.debugDescription)
 
         return cell
     }
     
 
-    /*
-    // Override to support conditional editing of the table view.
-    override func tableView(tableView: UITableView, canEditRowAtIndexPath indexPath: NSIndexPath) -> Bool {
-        // Return false if you do not want the specified item to be editable.
-        return true
+    
+    override func viewWillAppear(animated: Bool) {
+        super.viewWillAppear(true)
+        loadData()
     }
-    */
-
-    /*
-    // Override to support editing the table view.
-    override func tableView(tableView: UITableView, commitEditingStyle editingStyle: UITableViewCellEditingStyle, forRowAtIndexPath indexPath: NSIndexPath) {
-        if editingStyle == .Delete {
-            // Delete the row from the data source
-            tableView.deleteRowsAtIndexPaths([indexPath], withRowAnimation: .Fade)
-        } else if editingStyle == .Insert {
-            // Create a new instance of the appropriate class, insert it into the array, and add a new row to the table view
-        }    
+    
+    func loadData(){
+        let request = NSFetchRequest(entityName: "Products")
+        
+        do {
+            let result = try managedObjectContext.executeFetchRequest(request)
+            dataSource = result as! [NSManagedObject]
+            tableView.reloadData()
+        } catch {
+            fatalError("Error in retreving Products items")
+        }
     }
-    */
-
-    /*
-    // Override to support rearranging the table view.
-    override func tableView(tableView: UITableView, moveRowAtIndexPath fromIndexPath: NSIndexPath, toIndexPath: NSIndexPath) {
-
-    }
-    */
-
-    /*
-    // Override to support conditional rearranging of the table view.
-    override func tableView(tableView: UITableView, canMoveRowAtIndexPath indexPath: NSIndexPath) -> Bool {
-        // Return false if you do not want the item to be re-orderable.
-        return true
-    }
-    */
-
-    /*
-    // MARK: - Navigation
-
-    // In a storyboard-based application, you will often want to do a little preparation before navigation
-    override func prepareForSegue(segue: UIStoryboardSegue, sender: AnyObject?) {
-        // Get the new view controller using segue.destinationViewController.
-        // Pass the selected object to the new view controller.
-    }
-    */
     
     //MARK: Actions
     @IBAction func addAction(sender: UIBarButtonItem) {
@@ -101,8 +66,18 @@ class CoreDataVC: UITableViewController {
         
         let addAction = UIAlertAction(title: "اصافه کن", style: UIAlertActionStyle.Default) { (action: UIAlertAction) in
             let textField = alert.textFields?.first
-            self.dataSource.append(textField!.text!)
-            self.tableView.reloadData()
+
+            let entity = NSEntityDescription.entityForName("Products", inManagedObjectContext: self.managedObjectContext)
+            let product = NSManagedObject(entity: entity!, insertIntoManagedObjectContext: self.managedObjectContext)
+            product.setValue(textField?.text, forKey: "name")
+            
+            do {
+                try self.managedObjectContext.save()
+            } catch {
+                fatalError("Error in saving data to Core Data")
+            }
+            
+            self.loadData()
         }
         
         let cancelAction = UIAlertAction(title: "لغو", style: UIAlertActionStyle.Default) { (cancel: UIAlertAction) in
